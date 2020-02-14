@@ -34,5 +34,3 @@ spec:
         image: private-docker-registry.kube-system:5000/app:0.0.1
         ports:
         - containerPort: 8080
-      imagePullSecrets:
-      - name: regcred
