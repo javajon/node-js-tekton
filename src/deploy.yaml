@@ -31,6 +31,6 @@ spec:
     spec:
       containers:
       - name: app
-        image: test:0.0.1
+        image: private-docker-registry.kube-system:5000/app:0.0.1
         ports:
         - containerPort: 8080
