@@ -33,3 +33,6 @@ spec:
         - "--dockerfile=$(inputs.params.pathToDockerfile)"
         - "--destination=$(inputs.params.imageUrl):$(inputs.params.imageTag)"
         - "--context=$(inputs.resources.git-source.path)/$(inputs.params.pathToContext)/"
+        - "--skip-tls-verify"
+        - "--skip-tls-verify-pull"
+
