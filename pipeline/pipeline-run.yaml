@@ -18,4 +18,4 @@ spec:
       value: "IMAGE_URL"
     - name: "imageTag"
       value: "0.0.1"
-  serviceAccount: service-account
+  serviceAccountName: service-account
