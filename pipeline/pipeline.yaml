@@ -46,6 +46,8 @@ spec:
           value: $(params.repo-url)
         - name: revision
           value: $(params.revision)
+        - name: gitInitImage
+          value: alpine/git:latest
     - name: build-image-from-source
       taskRef:
         name: build-image-from-source
