@@ -35,7 +35,7 @@ spec:
         This workspace contains the cloned repo files, so they can be read by the
         next task.
   tasks:
-    - name: clone-repo
+    - name: fetch-source
       taskRef:
         name: git-clone
       workspaces:
@@ -50,7 +50,7 @@ spec:
       taskRef:
         name: build-image-from-source
       runAfter:
-        - clone-repo
+        - fetch-source
       params:
         - name: pathToContext
           value: $(params.pathToContext)
