@@ -1,54 +1,80 @@
-apiVersion: tekton.dev/v1alpha1
+apiVersion: tekton.dev/v1beta1
 kind: Pipeline
 metadata:
   name: application-pipeline
 spec:
-  resources:
-    - name: git-source
-      type: git
+  description: |
+    This pipeline clones a git repo, builds a Docker image from it using Kaniko,
+    and deploys the application to Kubernetes.
   params:
+    - name: repo-url
+      type: string
+      description: The git repository URL to clone from
+    - name: revision
+      type: string
+      description: The git revision to checkout (branch, tag, sha, ref)
+      default: main
     - name: pathToContext
+      type: string
       description: The path to the build context, used by Kaniko - within the workspace
       default: .
     - name: pathToYamlFile
+      type: string
       description: The path to the yaml file to deploy within the git source
-      default: config.yaml
+      default: deploy.yaml
     - name: imageUrl
+      type: string
       description: Url of image repository
-      default: deploy_target
     - name: imageTag
+      type: string
       description: Tag to apply to the built image
       default: latest
+  workspaces:
+    - name: shared-data
+      description: |
+        This workspace contains the cloned repo files, so they can be read by the
+        next task.
   tasks:
-  - name: build-image-from-source
-    taskRef:
-      name: build-image-from-source
-    params:
-      - name: pathToContext
-        value: "$(params.pathToContext)"
-      - name: imageUrl
-        value: "$(params.imageUrl)"
-      - name: imageTag
-        value: "$(params.imageTag)"
-    resources:
-      inputs:
-        - name: git-source
-          resource: git-source
-  - name: deploy-application
-    taskRef:
-      name: deploy-application
-    runAfter:
-      - build-image-from-source
-    params:
-      - name: pathToContext
-        value: "$(params.pathToContext)"
-      - name: pathToYamlFile
-        value: "$(params.pathToYamlFile)"
-      - name: imageUrl
-        value: "$(params.imageUrl)"
-      - name: imageTag
-        value: "$(params.imageTag)"
-    resources:
-      inputs:
-        - name: git-source
-          resource: git-source
+    - name: clone-repo
+      taskRef:
+        name: git-clone
+      workspaces:
+        - name: output
+          workspace: shared-data
+      params:
+        - name: url
+          value: $(params.repo-url)
+        - name: revision
+          value: $(params.revision)
+    - name: build-image-from-source
+      taskRef:
+        name: build-image-from-source
+      runAfter:
+        - clone-repo
+      params:
+        - name: pathToContext
+          value: $(params.pathToContext)
+        - name: imageUrl
+          value: $(params.imageUrl)
+        - name: imageTag
+          value: $(params.imageTag)
+      workspaces:
+        - name: source
+          workspace: shared-data
+    - name: deploy-application
+      taskRef:
+        name: deploy-application
+      runAfter:
+        - build-image-from-source
+      params:
+        - name: pathToContext
+          value: $(params.pathToContext)
+        - name: pathToYamlFile
+          value: $(params.pathToYamlFile)
+        - name: imageUrl
+          value: $(params.imageUrl)
+        - name: imageTag
+          value: $(params.imageTag)
+      workspaces:
+        - name: source
+          workspace: shared-data

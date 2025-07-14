@@ -1,0 +1,111 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: git-clone
+spec:
+  description: >-
+    This Task clones a Git repository into the output workspace.
+  params:
+    - name: url
+      description: Repository URL to clone from
+      type: string
+    - name: revision
+      description: Git revision to checkout (branch, tag, sha, ref)
+      type: string
+      default: "main"
+    - name: refspec
+      description: Git refspec to fetch before checking out revision
+      default: ""
+    - name: submodules
+      description: Initialize and update submodules
+      type: string
+      default: "true"
+    - name: depth
+      description: Perform a shallow clone with a depth of 1
+      type: string
+      default: "1"
+    - name: sslVerify
+      description: Set the `http.sslVerify` global git config
+      type: string
+      default: "true"
+    - name: deleteExisting
+      description: Clean the workspace before cloning
+      type: string
+      default: "true"
+    - name: verbose
+      description: Enable verbose logging for Git
+      type: string
+      default: "true"
+    - name: gitInitImage
+      description: The image used for git operations
+      type: string
+      default: "gcr.io/tekton-releases/github.com/tektoncd/pipeline/cmd/git-init:v0.40.2"
+  workspaces:
+    - name: output
+      description: The git repo will be cloned to the output workspace.
+  results:
+    - name: commit
+      description: The precise commit SHA that was fetched
+    - name: url
+      description: The URL of the repository that was fetched
+  steps:
+    - name: clean
+      image: $(params.gitInitImage)
+      env:
+        - name: PARAM_DELETE_EXISTING
+          value: $(params.deleteExisting)
+        - name: WORKSPACE_OUTPUT_PATH
+          value: $(workspaces.output.path)
+      script: |
+        #!/usr/bin/env sh
+        set -eu
+        if [ "${PARAM_DELETE_EXISTING}" = "true" ] ; then
+          rm -rf "$WORKSPACE_OUTPUT_PATH"/*
+          rm -rf "$WORKSPACE_OUTPUT_PATH"/.[!.]*
+          rm -rf "$WORKSPACE_OUTPUT_PATH"/..?*
+        fi
+    - name: clone
+      image: $(params.gitInitImage)
+      env:
+        - name: PARAM_URL
+          value: $(params.url)
+        - name: PARAM_REVISION
+          value: $(params.revision)
+        - name: PARAM_REFSPEC
+          value: $(params.refspec)
+        - name: PARAM_SUBMODULES
+          value: $(params.submodules)
+        - name: PARAM_DEPTH
+          value: $(params.depth)
+        - name: PARAM_SSL_VERIFY
+          value: $(params.sslVerify)
+        - name: PARAM_VERBOSE
+          value: $(params.verbose)
+        - name: WORKSPACE_OUTPUT_PATH
+          value: $(workspaces.output.path)
+      script: |
+        #!/usr/bin/env sh
+        set -eu
+
+        if [ "${PARAM_VERBOSE}" = "true" ] ; then
+          set -x
+        fi
+
+        CHECKOUT_DIR="${WORKSPACE_OUTPUT_PATH}"
+
+        /ko-app/git-init \
+          -url="${PARAM_URL}" \
+          -revision="${PARAM_REVISION}" \
+          -refspec="${PARAM_REFSPEC}" \
+          -path="${CHECKOUT_DIR}" \
+          -sslVerify="${PARAM_SSL_VERIFY}" \
+          -submodules="${PARAM_SUBMODULES}" \
+          -depth="${PARAM_DEPTH}"
+        cd "${CHECKOUT_DIR}"
+        RESULT_SHA="$(git rev-parse HEAD)"
+        EXIT_CODE="$?"
+        if [ "${EXIT_CODE}" != 0 ] ; then
+          exit "${EXIT_CODE}"
+        fi
+        printf "%s" "${RESULT_SHA}" > "$(results.commit.path)"
+        printf "%s" "${PARAM_URL}" > "$(results.url.path)"

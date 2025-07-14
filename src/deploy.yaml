@@ -31,7 +31,7 @@ spec:
     spec:
       containers:
       - name: app
-        # Because kube-registry-proxy is present localhost access is via http instead of https
-        image: localhost:5000/app:0.0.1
+        # Image will be replaced by the pipeline
+        image: IMAGE
         ports:
         - containerPort: 8080

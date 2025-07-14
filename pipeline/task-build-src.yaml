@@ -1,40 +1,47 @@
-apiVersion: tekton.dev/v1alpha1
+apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
   name: build-image-from-source
 spec:
-  inputs:
-    resources:
-      - name: git-source
-        type: git
-    params:
-      - name: pathToContext
-        description: The path to the build context, used by Kaniko - within the workspace
-        default: .
-      - name: pathToDockerfile
-        description: The path to the Dockerfile to build
-        default: Dockerfile
-      - name: imageUrl
-        description: value should be like - us.icr.io/test_namespace/builtImageApp
-      - name: imageTag
-        description: Tag to apply to the built image
+  description: |
+    This Task builds a container image using Kaniko
+  params:
+    - name: pathToContext
+      type: string
+      description: The path to the build context, used by Kaniko - within the workspace
+      default: .
+    - name: pathToDockerfile
+      type: string
+      description: The path to the Dockerfile to build
+      default: Dockerfile
+    - name: imageUrl
+      type: string
+      description: Url of image repository
+    - name: imageTag
+      type: string
+      description: Tag to apply to the built image
+      default: latest
+  workspaces:
+    - name: source
+      description: Holds the git repo
   steps:
     - name: list-src
       image: alpine
-      command:
-        - "ls"
-      args:
-        - "$(inputs.resources.git-source.path)"
+      script: |
+        #!/bin/sh
+        echo "Source directory contents:"
+        ls -la $(workspaces.source.path)/$(params.pathToContext)
     - name: build-and-push
-      image: gcr.io/kaniko-project/executor
+      image: gcr.io/kaniko-project/executor:latest
+      env:
+        - name: DOCKER_CONFIG
+          value: /kaniko/.docker
       command:
         - /kaniko/executor
       args:
-        - "--dockerfile=$(inputs.params.pathToDockerfile)"
-        - "--destination=$(inputs.params.imageUrl):$(inputs.params.imageTag)"
-        - "--context=$(inputs.resources.git-source.path)/$(inputs.params.pathToContext)/"
-        - "--insecure"
-        - "--insecure-pull"
-        - "--skip-tls-verify"
-        - "--skip-tls-verify-pull"
-
+        - --dockerfile=$(params.pathToDockerfile)
+        - --context=$(workspaces.source.path)/$(params.pathToContext)
+        - --destination=$(params.imageUrl):$(params.imageTag)
+        - --insecure
+        - --skip-tls-verify
+        - --skip-tls-verify-pull

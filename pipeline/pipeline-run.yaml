@@ -1,21 +1,30 @@
-apiVersion: tekton.dev/v1alpha1
+apiVersion: tekton.dev/v1beta1
 kind: PipelineRun
 metadata:
   name: application-pipeline-run
 spec:
   pipelineRef:
     name: application-pipeline
-  resources:
-    - name: git-source
-      resourceRef:
-        name: git
   params:
+    - name: repo-url
+      value: https://github.com/javajon/node-js-tekton
+    - name: revision
+      value: master
     - name: pathToContext
-      value: "src"
+      value: src
     - name: pathToYamlFile
-      value: "deploy.yaml"
-    - name: "imageUrl"
-      value: "registry-docker-registry.kube-system:5000/app"
-    - name: "imageTag"
-      value: "0.0.1"
+      value: deploy.yaml
+    - name: imageUrl
+      value: registry-docker-registry.kube-system:5000/app
+    - name: imageTag
+      value: 0.0.1
+  workspaces:
+    - name: shared-data
+      volumeClaimTemplate:
+        spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 1Gi
   serviceAccountName: service-account

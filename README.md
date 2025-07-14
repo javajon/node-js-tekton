@@ -4,9 +4,33 @@ The [Tekton Pipelines project](https://tekton.dev/) provides Kubernetes-style re
 
 This project demonstrates the building, deploying and running a Node.js application using Tekton on Kubernetes.
 
+**Note:** This project has been updated to work with modern versions of Tekton (v0.40+) that no longer support the deprecated `PipelineResource` type. Instead, it uses Workspaces and the `git-clone` task for source code management.
+
 ## Build and Deploy a Node.js App Using Tekton Pipeline
 
-To see how this works, follow the hands-on Katacoda tutorial [here](www.katacoda.com/javajon/pipelines).
+### Prerequisites
+
+- Kubernetes cluster (1.25+)
+- Tekton Pipelines installed (v0.40+)
+- kubectl configured to access your cluster
+- A container registry accessible from your cluster
+
+### Running the Pipeline
+
+1. Apply the pipeline resources:
+```bash
+kubectl apply -f pipeline/
+```
+
+2. Create and run the pipeline:
+```bash
+kubectl create -f pipeline/pipeline-run.yaml
+```
+
+3. Monitor the pipeline execution:
+```bash
+tkn pipelinerun logs application-pipeline-run -f
+```
 
 ## References
 
