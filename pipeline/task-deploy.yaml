@@ -27,11 +27,17 @@ spec:
   steps:
     - name: update-yaml
       image: alpine
+      env:
+        - name: REGISTRY_URL
+          valueFrom:
+            configMapKeyRef:
+              name: registry-config
+              key: url
       script: |
         #!/bin/sh
         set -e
-        echo "Updating deployment image to $(params.imageUrl):$(params.imageTag)"
-        sed -i -e "s;IMAGE;$(params.imageUrl):$(params.imageTag);g" $(workspaces.source.path)/$(params.pathToContext)/$(params.pathToYamlFile)
+        echo "Updating deployment image to ${REGISTRY_URL}/$(params.imageUrl):$(params.imageTag)"
+        sed -i -e "s;IMAGE;${REGISTRY_URL}/$(params.imageUrl):$(params.imageTag);g" $(workspaces.source.path)/$(params.pathToContext)/$(params.pathToYamlFile)
     - name: deploy-app
       image: bitnami/kubectl:latest
       script: |
