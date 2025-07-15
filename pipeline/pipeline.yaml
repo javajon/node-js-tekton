@@ -44,6 +44,8 @@ spec:
       params:
         - name: url
           value: $(params.repo-url)
+        - name: gitInitImage
+          value: ghcr.io/tektoncd/pipeline/cmd/git-init:latest
     - name: build-image-from-source
       taskRef:
         name: build-image-from-source
