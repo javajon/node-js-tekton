@@ -41,12 +41,12 @@ spec:
             configMapKeyRef:
               name: registry-config
               key: url
-      script: |
-        #!/busybox/sh
-        /kaniko/executor \
-          --dockerfile=$(params.pathToDockerfile) \
-          --context=$(workspaces.source.path)/$(params.pathToContext) \
-          --destination=${REGISTRY_URL}/$(params.imageUrl):$(params.imageTag) \
-          --insecure \
-          --skip-tls-verify \
-          --skip-tls-verify-pull
+      command:
+        - /kaniko/executor
+      args:
+        - --dockerfile=$(params.pathToDockerfile)
+        - --context=$(workspaces.source.path)/$(params.pathToContext)
+        - --destination=$(REGISTRY_URL)/$(params.imageUrl):$(params.imageTag)
+        - --insecure
+        - --skip-tls-verify
+        - --skip-tls-verify-pull
