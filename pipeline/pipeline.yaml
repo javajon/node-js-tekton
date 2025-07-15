@@ -44,8 +44,6 @@ spec:
       params:
         - name: url
           value: $(params.repo-url)
-        - name: gitInitImage
-          value: bitnami/git:latest
     - name: build-image-from-source
       taskRef:
         name: build-image-from-source
